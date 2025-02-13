@@ -353,6 +353,7 @@ class MultiLayerNetwork(object):
         activation_functions = {
             "relu": ReluLayer(),
             "sigmoid": SigmoidLayer(),
+            #"identity": 
         }
         
         self._layers = []
