@@ -355,14 +355,22 @@ class MultiLayerNetwork(object):
             "sigmoid": SigmoidLayer(),
             #"identity": 
         }
-        
-        self._layers = []
 
+        self._layers = []
         prev_dim = input_dim
         for n_out, activation in zip(neurons, activations):
-            self._layers.append(LinearLayer(prev_dim, n_out)) 
-            self._layers.append(activation_functions[activation])
+            self._layers.append(LinearLayer(prev_dim, n_out))
+            if activation in activation_functions:  # Check if activation is valid
+                self._layers.append(activation_functions[activation])
             prev_dim = n_out
+        
+        # self._layers = []
+
+        # prev_dim = input_dim
+        # for n_out, activation in zip(neurons, activations):
+        #     self._layers.append(LinearLayer(prev_dim, n_out)) 
+        #     self._layers.append(activation_functions[activation])
+        #     prev_dim = n_out
 
         #######################################################################
         #                       ** END OF YOUR CODE **
@@ -558,7 +566,7 @@ class Trainer(object):
             # Split the dataset into mini-batches
             for batch_start in range(0, len(input_dataset), self.batch_size):
                 batch_end = min(batch_start + self.batch_size, len(input_dataset))
-                
+
                 # Get the current batch
                 batch_input = input_dataset[batch_start:batch_end]
                 batch_target = target_dataset[batch_start:batch_end]
