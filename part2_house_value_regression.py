@@ -1,4 +1,7 @@
 import torch
+import torch.nn as nn
+import torch.optim as optim
+from sklearn import preprocessing
 import pickle
 import numpy as np
 import pandas as pd
@@ -23,12 +26,28 @@ class Regressor():
         #                       ** START OF YOUR CODE **
         #######################################################################
 
-        # Replace this code with your own
+        # Initialise preprocessing attributes
+        self.label_binariser = preprocessing.LabelBinarizer()
+        self.scalers = {}
+        self.nb_epoch = nb_epoch
+
+        # Preprocess input data to determine dimensions
         X, _ = self._preprocessor(x, training = True)
-        self.input_size = X.shape[1]
-        self.output_size = 1
-        self.nb_epoch = nb_epoch 
-        return
+
+        # Define network architecture
+        self.model = nn.Sequential(
+            nn.Linear(X.shape[1], 64),
+            nn.ReLU(),
+            nn.Dropout(0.2),
+            nn.Linear(64, 32),
+            nn.ReLU(),
+            nn.Dropout(0.2),
+            nn.Linear(32, 1),            
+        )
+
+        # Define loss function and optimiser
+        self.criterion = nn.MSELoss()
+        self.optimiser = torch.optim.Adam(self.model.parameters(), lr = 0.001)
 
         #######################################################################
         #                       ** END OF YOUR CODE **
@@ -57,9 +76,54 @@ class Regressor():
         #                       ** START OF YOUR CODE **
         #######################################################################
 
-        # Replace this code with your own
+        # Convert to numpy arrays if needed
+        if isinstance(x, pd.DataFrame):
+            x = x.copy() # Avoid modifying original data
+
+            # Handle missing values 
+            x['total_bedrooms'].fillna(x['total_bedrooms'].mean(), inplace = True)
+
+            # Handle categorical features
+            if training:
+                self.label_binariser.fit(x['ocean_proximity'])
+            ocean_proximity_encoded = self.label_binariser.transform(x['ocean_proximity'])
+
+            # Drop original categorical column
+            x = x.drop('ocean_proximity', axis = 1)
+
+            # Scale numerical features
+            numerical_features = x.columns[x.dtypes != 'object']
+            if training:
+                self.scalers = {
+                    column: preprocessing.MinMaxScaler()
+                    for column in numerical_features
+                }
+            
+            for column in numerical_features:
+                if training:
+                    x[column] = self.scalers[column].fit_transform(x[[column]])
+                else:
+                    x[column] = self.scalers[column].transform(x[[column]])  
+
+            # Combine numerical and encoded categorical features
+            X = np.hstack([x.values, ocean_proximity_encoded])
+
+            # Convert to PyTorch tensor
+            X = torch.FloatTensor(X)
+    
+        # Preprocess output data if provided
+        if y is not None:
+            if isinstance(y, pd.DataFrame):
+                y = y.values
+            if training:
+                self.y_scaler = preprocessing.MinMaxScaler()
+                y = self.y_scaler.fit_transform(y)
+            else:
+                y = self.y_scaler.transform(y)
+            y = torch.FloatTensor(y)
+
         # Return preprocessed x and y, return None for y if it was None
-        return x, (y if isinstance(y, pd.DataFrame) else None)
+        return X, (y if y is not None else None)
 
         #######################################################################
         #                       ** END OF YOUR CODE **
@@ -85,6 +149,24 @@ class Regressor():
         #######################################################################
 
         X, Y = self._preprocessor(x, y = y, training = True) # Do not forget
+
+        # Training loop
+        self.model.train()
+        for epoch in range(self.nb_epoch):
+            # Forward pass
+            self.optimiser.zero_grad()
+            outputs = self.model(X)
+
+            # Compute loss
+            loss = self.criterion(outputs, Y)
+
+            # Backward pass and optimisation step 
+            loss.backward()
+            self.optimiser.step()
+
+            # Print progress
+            if (epoch + 1) % 100 == 0:
+                print(f"Epoch {epoch + 1}/{self.nb_epoch}, Loss: {loss.item():.4f}")
         return self
 
         #######################################################################
@@ -218,4 +300,3 @@ def example_main():
 
 if __name__ == "__main__":
     example_main()
-
