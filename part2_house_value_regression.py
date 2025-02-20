@@ -81,7 +81,8 @@ class Regressor():
             x = x.copy() # Avoid modifying original data
 
             # Handle missing values 
-            x['total_bedrooms'].fillna(x['total_bedrooms'].mean(), inplace = True)
+            total_bedrooms_mean = x['total_bedrooms'].mean()
+            x = x.assign(total_bedrooms = x['total_bedrooms'].fillna(total_bedrooms_mean))
 
             # Handle categorical features
             if training:
@@ -192,7 +193,17 @@ class Regressor():
         #######################################################################
 
         X, _ = self._preprocessor(x, training = False) # Do not forget
-        pass
+        
+        # Set model to evaluation mode
+        self.model.eval()
+
+        # Make predictions
+        with torch.no_grad():
+            predictions = self.model(X)
+            # Inverse transform the predictions
+            predictions = self.y_scaler.inverse_transform(predictions.cpu().numpy())
+
+        return predictions
 
         #######################################################################
         #                       ** END OF YOUR CODE **
@@ -217,7 +228,25 @@ class Regressor():
         #######################################################################
 
         X, Y = self._preprocessor(x, y = y, training = False) # Do not forget
-        return 0 # Replace this code with your own
+        
+        # Set model to evaluation mode
+        self.model.eval()
+
+        # Make predictions
+        with torch.no_grad():
+            predictions = self.model(X)
+        
+        # Calculate MSE loss
+        mse_loss = self.criterion(predictions, Y).item()
+
+        # Calculate R-squared score
+        y_mean = torch.mean(Y)
+        ss_total = torch.sum((Y - y_mean) ** 2)
+        ss_residual = torch.sum((Y - predictions) ** 2)
+        r2_score = 1 - (ss_residual / ss_total)
+
+        # Return the R-squared score
+        return r2_score
 
         #######################################################################
         #                       ** END OF YOUR CODE **
