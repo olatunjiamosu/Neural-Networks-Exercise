@@ -2,3 +2,6 @@
 **/*.pyc
 venv
 **/site-packages
+70091_2_spec.pdf
+*.png 
+working.py
