@@ -465,7 +465,8 @@ def perform_hyperparameter_search(x_train, y_train):
             all_raw_results.append({
                 **params,
                 "status": "failed", 
-                "error": str(e)
+                "error": str(e),
+                "val_loss":np.inf
             })
 
     if best_params:
@@ -523,6 +524,8 @@ def prepare_visualization_data(raw_results):
         axis=1, 
         errors='ignore'
     )
+    df = df[df["val_loss"] != np.inf]  # Remove placeholder failures
+    df = df.dropna(subset=["val_loss"])  # Remove NaN
     
     return df
 
@@ -536,7 +539,7 @@ def plot_hyperparameter_heatmap(raw_results, param1, param2_prefix):
         pivot_table = df.pivot_table(values='val_loss', index=param1, columns=p, aggfunc='mean')
         sns.heatmap(pivot_table, annot=True, fmt=".4f")
         plt.title(f"Heatmap: {param1} vs {p}")
-        plt.savefig(f"heatmap_{param1}_vs_{p}.png"))
+        plt.savefig(f"heatmap_{param1}_vs_{p}.png")
         plt.close()
 
 def plot_training_curves(regressor):
@@ -565,7 +568,7 @@ def plot_parallel_coordinates(raw_results):
     )
     plt.xticks(rotation=45)
     plt.title("Hyperparameter Performance Trajectory")
-    plt.savefig("parallel_coordinates.png"))
+    plt.savefig("parallel_coordinates.png")
 def plot_hyperparameter_pairs(results_df):
     """Pairplot showing relationships between key parameters"""
     sns.pairplot(results_df[['learning_rate', 'batch_size', 'dropout_rate', 'val_loss']],
