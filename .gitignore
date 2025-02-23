@@ -4,3 +4,4 @@ venv
 **/site-packages
 70091_2_spec.pdf
 working.py
+*.png
