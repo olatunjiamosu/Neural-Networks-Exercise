@@ -71,7 +71,7 @@ class Regressor():
         layers.append(nn.Linear(input_size, 1))
         self.model = nn.Sequential(*layers)
 
-        # Optimizer
+        # Optimiser
         if optimizer == "adam":
             self.optimiser = torch.optim.Adam(
                 self.model.parameters(), 
@@ -118,7 +118,7 @@ class Regressor():
         #                       ** START OF YOUR CODE **
         #######################################################################
         
-        #Ensuring x is a copy to avoid SettingWithCopyWarning
+        #Ensuring x is a copy to avoid issues with the original dataset
         x=x.copy()
 
         # Scale numerical features
@@ -132,7 +132,7 @@ class Regressor():
             else:
                 raise ValueError(f"Unknown scaler type: {self.scaler_type}")
 
-            # Initialize scalers for each numerical feature
+            # Initialise scalers for each numerical feature
             self.scalers = {
                 column: scaler_class()
                 for column in numerical_features
@@ -345,7 +345,7 @@ Here is an example of how the Regressor class can be used to train a regressor m
         y_true = Y.numpy()
         y_pred = predictions.numpy()
 
-        # Return the R-squared score
+        # Return evaluation metrics
         return { 
             "MSE": mean_squared_error(y_true, y_pred),
             "RMSE": root_mean_squared_error(y_true, y_pred),
@@ -417,7 +417,7 @@ def perform_hyperparameter_search(x_train, y_train):
         "scaler": ["minmax", "standard"]             # Compare scaling methods
     }
     
-     # Use randomized search instead of grid search
+     # Use randomised search 
     n_iter = 20  # Number of combinations to try
     search_space = ParameterSampler(
         param_distributions, 
@@ -476,7 +476,7 @@ def perform_hyperparameter_search(x_train, y_train):
     else:       
         print("Warning: Hyperparameter search failed. No valid model saved.")
 
-    return best_params, all_raw_results  # Return the chosen hyper parameters
+    return best_params, all_raw_results  # Return the chosen hyper parameters and raw results for graphing
 
     #######################################################################
     #                       ** END OF YOUR CODE **
@@ -665,15 +665,15 @@ def example_main2():
     best_params, all_raw_results = perform_hyperparameter_search(x_train, y_train)
     print(f"Best Hyperparameters: {best_params}")
     
-    # Generate analysis visualizations
+    # Generate analysis visualisations
     results_df = prepare_visualization_data(all_raw_results)
     
-    # ===== New Visualizations =====
+    
     plot_hyperparameter_importance(results_df)
     plot_layer_performance(results_df)
-    # ==============================
     
-    # Existing visualizations
+    
+    
     plot_hyperparameter_heatmap(results_df, 'learning_rate', 'hidden_sizes')
     plot_parallel_coordinates(results_df)
     plot_hyperparameter_pairs(results_df)
