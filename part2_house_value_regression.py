@@ -18,8 +18,7 @@ from sklearn.ensemble import RandomForestRegressor
 
 
 class Regressor():
-
-    def __init__(self, x, nb_epoch = 1000, learning_rate =0.001, hidden_sizes=(64,32), dropout_rate =0.2, optimizer = "adam", weight_decay=0, activation = "relu", scaler ="minmax", batch_size=64):
+    def __init__(self, x, nb_epoch = 1000, learning_rate=0.001, hidden_sizes=(64,32), dropout_rate=0.2, optimizer = "adam", weight_decay=0, activation = "relu", scaler="minmax", batch_size=64):
         # You can add any input parameters you need
         # Remember to set them with a default value for LabTS tests
         """ 
@@ -43,7 +42,30 @@ class Regressor():
         self.scaler_type = scaler
         self.batch_size = batch_size
         self.nb_epoch = nb_epoch
-       
+
+        # Ensure x is a pandas DataFrame
+        if not isinstance(x, pd.DataFrame):
+            raise TypeError("Input x must be a pandas DataFrame.")
+
+        # Ensure hidden_sizes is a tuple or list
+        if not isinstance(hidden_sizes, (tuple, list)):
+            raise TypeError("hidden_sizes must be a tuple or list.")
+
+        # Ensure nb_epoch is a positive integer
+        if not isinstance(nb_epoch, int) or nb_epoch <= 0:
+            raise ValueError("nb_epoch must be a positive integer.")
+
+        # Ensure learning_rate is a positive float
+        if not isinstance(learning_rate, float) or learning_rate <= 0:
+            raise ValueError("learning_rate must be a positive float.")
+
+        # Ensure dropout_rate is between 0 and 1
+        if not isinstance(dropout_rate, float) or dropout_rate < 0 or dropout_rate >= 1:
+            raise ValueError("dropout_rate must be a float between 0 and 1.")
+
+        # Ensure batch_size is a positive integer
+        if not isinstance(batch_size, int) or batch_size <= 0:
+            raise ValueError("batch_size must be a positive integer.")
 
         # Preprocess input data to determine dimensions
         X, _ = self._preprocessor(x, training = True)
@@ -53,7 +75,7 @@ class Regressor():
         if activation == "relu":
             self.activation = nn.ReLU()
         elif activation == "sigmoid":
-            self.activation = nn.sigmoid()
+            self.activation = nn.Sigmoid()
         else:
             raise ValueError(f"Unsupported activation: {activation}")
 
@@ -151,8 +173,8 @@ class Regressor():
         # Handle missing values 
         numerical_cols = x.select_dtypes(include=[np.number]).columns
         if training:
-            self.na_medians = x [numerical_cols].median().to_dict()
-        x[numerical_cols] =x[numerical_cols].fillna(self.na_medians)
+            self.na_medians = x [numerical_cols].median().to_dict() # Calculate median for each numerical column
+        x[numerical_cols] =x[numerical_cols].fillna(self.na_medians) # Fill missing values with median
 
         # Handle categorical features
         if training:
@@ -245,10 +267,10 @@ class Regressor():
                 epoch_train_loss += loss.item()
             
             #Calculate validation loss
-            self.model.eval()
+            self.model.eval() # Set model to evaluation mode
             with torch.no_grad():
-                val_pred = self.model(X_val)
-                val_loss = self.criterion(val_pred, Y_val).item()
+                val_pred = self.model(X_val) # Make predictions on validation set
+                val_loss = self.criterion(val_pred, Y_val).item() # Compute loss
             
             #Track Losses
             avg_train_loss = epoch_train_loss/ len(train_loader)
@@ -310,7 +332,7 @@ class Regressor():
         with torch.no_grad():
             predictions = self.model(X)
             # Inverse transform the predictions
-            predictions = self.y_scaler.inverse_transform(predictions.cpu().numpy())
+            predictions = self.y_scaler.inverse_transform(predictions.cpu().numpy()) # Convert to numpy array
 
         return predictions
 
