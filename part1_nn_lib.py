@@ -208,7 +208,8 @@ class ReluLayer(Layer):
         #                       ** START OF YOUR CODE **
         #######################################################################
         z = self._cache_current  # Retrieve stored input
-        grad_z = grad_z * (z > 0)  # Apply derivative (1 for z > 0, else 0)
+        epsilon = 1e-8 # Avoid division by zero
+        grad_z = grad_z * (z > epsilon)  # Apply derivative (1 for z > epsilon, else 0)
         return grad_z
 
         #######################################################################
@@ -390,6 +391,11 @@ class MultiLayerNetwork(object):
         #######################################################################
         #                       ** START OF YOUR CODE **
         #######################################################################
+        
+        # Checks if input dimensions match the expected input dimensions
+        if x.shape[1] != self.input_dim:
+            raise ValueError("Input dimensions do not match the expected input dimensions.")
+        
         for layer in self._layers:
             x = layer.forward(x)
         return x
@@ -635,7 +641,7 @@ class Preprocessor(object):
         self.min_vals = np.min(data, axis=0)
         self.max_vals = np.max(data, axis=0)
         self.range_vals = self.max_vals - self.min_vals
-        self.range_vals[self.range_vals == 0] = 1
+        self.range_vals[self.range_vals == 0] = 1 # Avoid division by zero
 
         #######################################################################
         #                       ** END OF YOUR CODE **
